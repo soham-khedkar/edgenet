@@ -1,0 +1,15 @@
+# EdgeNet Python Agent - Requirements
+# Uses JSON-RPC for D-Link DIR-615 router communication
+
+# HTTP client for API requests
+requests==2.31.0
+
+# Flask API server
+flask==3.0.0
+flask-cors==4.0.0
+
+# Environment variable management
+python-dotenv==1.0.0
+
+# Retry logic for network errors
+tenacity==8.2.3

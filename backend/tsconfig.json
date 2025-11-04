@@ -1,0 +1,34 @@
+{
+  "compilerOptions": {
+    // Language and Module Settings
+    "target": "ES2022",                    // Modern JavaScript features
+    "module": "ESNext",                    // ES modules (import/export)
+    "moduleResolution": "node",            // Node.js module resolution
+    "lib": ["ES2022"],                     // Available built-in APIs
+    "types": ["node"],                     // Include Node.js types (console, process, etc.)
+    
+    // Type Checking
+    "strict": true,                        // Enable all strict type checking
+    "esModuleInterop": true,               // Better CommonJS/ESM interop
+    "skipLibCheck": true,                  // Skip type checking of declaration files
+    "forceConsistentCasingInFileNames": true, // Enforce consistent file naming
+    
+    // Output
+    "outDir": "./dist",                    // Compiled JavaScript output folder
+    "rootDir": "./src",                    // Source TypeScript files location
+    "declaration": true,                   // Generate .d.ts files
+    "sourceMap": true,                     // Generate source maps for debugging
+    
+    // Module Resolution
+    "resolveJsonModule": true,             // Allow importing JSON files
+    "allowSyntheticDefaultImports": true,  // Better default import handling
+    
+    // Advanced
+    "noUnusedLocals": true,                // Error on unused variables
+    "noUnusedParameters": true,            // Error on unused parameters
+    "noImplicitReturns": true,             // Error on missing return statements
+    "noFallthroughCasesInSwitch": true     // Error on switch fallthrough
+  },
+  "include": ["src/**/*"],                 // Files to compile
+  "exclude": ["node_modules", "dist"]      // Files to ignore
+}

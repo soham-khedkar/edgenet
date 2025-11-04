@@ -1,36 +1,87 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# EdgeNet
 
-## Getting Started
+Network monitoring and management system for D-Link routers with real-time analytics and bandwidth control.
 
-First, run the development server:
+## Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- 📊 Real-time network monitoring dashboard
+- 🔧 QoS bandwidth control for WAN/LAN ports
+- 📈 Network statistics and usage analytics
+- 🖥️ Device management and tracking
+- 🐳 Docker containerized deployment
+
+## Tech Stack
+
+- **Frontend**: Next.js 15, React 19, TypeScript, Tailwind CSS
+- **Backend**: Node.js, Express, TypeScript
+- **Agent**: Python, Flask
+- **Database**: Supabase (PostgreSQL)
+- **Deployment**: Docker & Docker Compose
+
+## Quick Start
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/soham-khedkar/edgenet.git
+   cd edgenet
+   ```
+
+2. **Set up environment variables**
+   ```bash
+   # Copy example env files
+   cp .env.example .env
+   cp backend/.env.example backend/.env
+   
+   # Edit .env files with your configuration
+   ```
+
+3. **Run with Docker**
+   ```bash
+   docker-compose up -d
+   ```
+
+4. **Access the application**
+   - Frontend: http://localhost:3000
+   - Backend API: http://localhost:4000
+   - Agent API: http://localhost:5000
+
+## Project Structure
+
+```
+edgenet/
+├── frontend/          # Next.js frontend application
+├── backend/           # Node.js backend API
+├── agent/             # Python router communication agent
+└── docker-compose.yml # Container orchestration
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Environment Setup
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+See `.env.example` files in each directory for required configuration variables.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Development
 
-## Learn More
+Each service can be run independently:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+# Frontend (port 3000)
+cd frontend
+pnpm install
+pnpm dev
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# Backend (port 4000)
+cd backend
+pnpm install
+pnpm dev
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# Agent (port 5000)
+cd agent
+python -m venv venv
+source venv/bin/activate  # or venv\Scripts\activate on Windows
+pip install -r requirements.txt
+python api.py
+```
 
-## Deploy on Vercel
+## License
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+MIT

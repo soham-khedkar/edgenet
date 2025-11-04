@@ -1,0 +1,42 @@
+services:
+  # Backend API (Node.js/Express)
+  backend:
+    build: ./backend
+    ports:
+      - "4000:4000"
+    environment:
+      - NODE_ENV=production
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+      - AGENT_API_URL=http://agent:5000
+    depends_on:
+      - agent
+    restart: unless-stopped
+
+  # Python Agent API (Flask)
+  agent:
+    build: ./agent
+    ports:
+      - "5000:5000"
+    environment:
+      - ROUTER_IP=${ROUTER_IP}
+      - ROUTER_USERNAME=${ROUTER_USERNAME}
+      - ROUTER_PASSWORD=${ROUTER_PASSWORD}
+      - POLLING_INTERVAL=${POLLING_INTERVAL:-30}
+      - BACKEND_URL=http://backend:4000
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+    restart: unless-stopped
+
+  # Frontend (Next.js)
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:4000
+      - NEXT_PUBLIC_SUPABASE_URL=${SUPABASE_URL}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${SUPABASE_KEY}
+    depends_on:
+      - backend
+    restart: unless-stopped
