@@ -80,10 +80,12 @@ def poll_single_router(router_config):
     
     try:
         # Create router client for this user
+        # Temporarily set env vars for this router (RouterClient reads from env)
+        os.environ['ROUTER_IP'] = router_ip
+        os.environ['ROUTER_USERNAME'] = username
+        os.environ['ROUTER_PASSWORD'] = password
+        
         router = RouterClient()
-        router.base_url = f"http://{router_ip}"
-        router.username = username
-        router.password = password
         
         # Login to router
         if not router.login():
