@@ -13,5 +13,5 @@ COPY . .
 # Expose Flask port
 EXPOSE 5000
 
-# Run Flask API (Multi-Tenant)
-CMD ["python", "api_multitenant.py"]
+# Run Flask API (Single-user agent)
+CMD ["python", "api.py"]
