@@ -6,7 +6,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 // Validate required environment variables exist
-if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+if (!process.env.SUPABASE_URL || !process.env.SUPABASE_KEY) {
     throw new Error('Missing SUPABASE_URL or SUPABASE_ANON_KEY in .env file');
 }
 
@@ -55,8 +55,8 @@ export interface Database {
 
 // Create Supabase client with anon key (uses RLS policies)
 const supabase: SupabaseClient<Database> = createClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_KEY,
     {
         auth: {
             autoRefreshToken: false,

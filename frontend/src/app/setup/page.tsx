@@ -1,10 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Gear, CheckCircle, XCircle, MagnifyingGlass } from '@phosphor-icons/react';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const AGENT_API_URL = 'http://localhost:5000';
 
 interface RouterConfig {
   routerIp: string;
@@ -14,6 +18,8 @@ interface RouterConfig {
 }
 
 export default function SetupPage() {
+  const { user } = useAuth();
+  const router = useRouter();
   const [config, setConfig] = useState<RouterConfig>({
     routerIp: '192.168.0.1',
     username: 'admin',
@@ -24,6 +30,45 @@ export default function SetupPage() {
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [saved, setSaved] = useState(false);
+  const [loadingConfig, setLoadingConfig] = useState(true);
+
+  // Redirect if not logged in
+  useEffect(() => {
+    if (!user) {
+      router.push('/login');
+    }
+  }, [user, router]);
+
+  // Load saved config from Supabase
+  useEffect(() => {
+    if (!user) return;
+
+    const loadSavedConfig = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('user_router_configs')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+
+        if (data && !error) {
+          setConfig({
+            routerIp: data.router_ip,
+            username: data.username,
+            password: data.password,
+            pollingInterval: data.polling_interval || 30
+          });
+          setSaved(true);
+        }
+      } catch (err) {
+        console.error('Error loading config:', err);
+      } finally {
+        setLoadingConfig(false);
+      }
+    };
+
+    loadSavedConfig();
+  }, [user]);
 
   const handleInputChange = (field: keyof RouterConfig, value: string | number) => {
     setConfig(prev => ({ ...prev, [field]: value }));
@@ -36,7 +81,7 @@ export default function SetupPage() {
     setTestResult(null);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/setup/test`, {
+      const response = await fetch(`${AGENT_API_URL}/test-connection`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(config)
@@ -51,7 +96,7 @@ export default function SetupPage() {
     } catch (error) {
       setTestResult({ 
         success: false, 
-        message: 'Unable to connect to backend service.' 
+        message: 'Unable to connect to agent service.' 
       });
     } finally {
       setTesting(false);
@@ -59,22 +104,56 @@ export default function SetupPage() {
   };
 
   const saveConfiguration = async () => {
+    if (!user) {
+      alert('Please login first');
+      router.push('/login');
+      return;
+    }
+
     try {
-      const response = await fetch(`${API_BASE_URL}/api/setup/save`, {
+      // Save to agent API first
+      const agentResponse = await fetch(`${AGENT_API_URL}/save-config`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(config)
       });
 
-      const data = await response.json();
+      const agentData = await agentResponse.json();
       
-      if (response.ok) {
-        setSaved(true);
-      } else {
-        alert('Failed to save: ' + (data.error || 'Unknown error'));
+      if (!agentData.success) {
+        alert('Failed to save to agent: ' + (agentData.message || 'Unknown error'));
+        return;
       }
+
+      // Save to Supabase for user
+      const { error: supabaseError } = await supabase
+        .from('user_router_configs')
+        .upsert({
+          user_id: user.id,
+          router_ip: config.routerIp,
+          username: config.username,
+          password: config.password,
+          polling_interval: config.pollingInterval
+        }, {
+          onConflict: 'user_id'
+        });
+
+      if (supabaseError) {
+        console.error('Supabase error:', supabaseError);
+        alert('Failed to save to database: ' + supabaseError.message);
+        return;
+      }
+
+      setSaved(true);
+      setTestResult({
+        success: true,
+        message: 'Configuration saved! Redirecting to dashboard...'
+      });
+
+      setTimeout(() => router.push('/'), 2000);
     } catch (error) {
-      alert('Unable to save configuration. Check your connection.');
+      console.error('Save error:', error);
+      alert('Unable to save configuration. Check agent service.');
     }
   };
 

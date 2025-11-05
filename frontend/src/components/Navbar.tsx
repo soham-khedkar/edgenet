@@ -3,10 +3,14 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { List, X, WifiHigh, Gear, ChartBar, Devices } from '@phosphor-icons/react';
+import { List, X, WifiHigh, Gear, ChartBar, Devices, SignOut, User } from '@phosphor-icons/react';
+import { useConnectionStatus } from '@/hooks/useConnectionStatus';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const { isConnected } = useConnectionStatus();
+  const { user, signOut } = useAuth();
   const pathname = usePathname();
 
   const isActive = (path: string) => pathname === path;
@@ -32,23 +36,44 @@ export default function Navbar() {
           </Link>
 
           {/* Center: Status */}
-          <div className="hidden md:flex items-center gap-1.5">
-            <div className="w-1.5 h-1.5 rounded-full bg-[#CCFF00] animate-pulse-neo"></div>
-            <span className="text-[#CCFF00] text-[10px] font-mono">CONNECTED</span>
+          <div className="hidden md:flex items-center gap-4">
+            <div className="flex items-center gap-1.5">
+              <div className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-[#CCFF00] animate-pulse-neo' : 'bg-red-500'}`}></div>
+              <span className={`text-[10px] font-mono ${isConnected ? 'text-[#CCFF00]' : 'text-red-500'}`}>
+                {isConnected ? 'CONNECTED' : 'OFFLINE'}
+              </span>
+            </div>
+            {user && (
+              <div className="flex items-center gap-2 text-[10px] font-mono text-white">
+                <User size={14} weight="bold" />
+                {user.email}
+              </div>
+            )}
           </div>
 
-          {/* Right: Hamburger Menu */}
-          <button 
-            onClick={() => setMenuOpen(!menuOpen)}
-            className="neo-button bg-[#00E5FF] p-2"
-            aria-label="Menu"
-          >
-            {menuOpen ? (
-              <X size={20} color="#000" weight="bold" />
-            ) : (
-              <List size={20} color="#000" weight="bold" />
+          {/* Right: Actions */}
+          <div className="flex items-center gap-2">
+            {user && (
+              <button
+                onClick={() => signOut()}
+                className="hidden md:block neo-button bg-red-500 text-white px-3 py-1.5 font-pixel text-[10px]"
+                title="Logout"
+              >
+                <SignOut size={14} weight="bold" />
+              </button>
             )}
-          </button>
+            <button 
+              onClick={() => setMenuOpen(!menuOpen)}
+              className="neo-button bg-[#00E5FF] p-2"
+              aria-label="Menu"
+            >
+              {menuOpen ? (
+                <X size={20} color="#000" weight="bold" />
+              ) : (
+                <List size={20} color="#000" weight="bold" />
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -56,6 +81,22 @@ export default function Navbar() {
       {menuOpen && (
         <div className="bg-black border-t-4 border-[#FFD600]">
           <div className="max-w-[1800px] mx-auto px-4 md:px-8 lg:px-12 py-4 flex flex-col gap-3">
+            {/* User Info (Mobile) */}
+            {user && (
+              <div className="md:hidden flex items-center justify-between p-3 neo-border border-white/20">
+                <div className="flex items-center gap-2 text-[10px] font-mono text-white">
+                  <User size={14} weight="bold" />
+                  {user.email}
+                </div>
+                <button
+                  onClick={() => { signOut(); setMenuOpen(false); }}
+                  className="neo-button bg-red-500 text-white px-3 py-1.5 font-pixel text-[10px]"
+                >
+                  LOGOUT
+                </button>
+              </div>
+            )}
+
             {navLinks.map((link) => {
               const Icon = link.icon;
               const active = isActive(link.href);
@@ -78,6 +119,17 @@ export default function Navbar() {
                 </Link>
               );
             })}
+
+            {!user && (
+              <Link
+                href="/login"
+                className="neo-button flex items-center justify-center gap-3 px-4 py-3 font-pixel text-xs md:text-sm no-underline bg-[#FFD600]"
+                onClick={() => setMenuOpen(false)}
+              >
+                <User size={20} weight="bold" />
+                LOGIN
+              </Link>
+            )}
           </div>
         </div>
       )}

@@ -1,130 +1,82 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-);
+const AGENT_API_URL = 'http://localhost:5000';
 
 export function useRealtimeDevices() {
   const [devices, setDevices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    // Initial fetch
-    fetchDevices();
-
-    // Subscribe to realtime changes
-    const channel = supabase
-      .channel('devices-channel')
-      .on(
-        'postgres_changes',
-        {
-          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
-          schema: 'public',
-          table: 'devices'
-        },
-        (payload: any) => {
-          console.log('Realtime update:', payload);
-          
-          if (payload.eventType === 'INSERT') {
-            setDevices((prev) => [...prev, payload.new]);
-          } else if (payload.eventType === 'UPDATE') {
-            setDevices((prev) =>
-              prev.map((device) =>
-                device.id === payload.new.id ? payload.new : device
-              )
-            );
-          } else if (payload.eventType === 'DELETE') {
-            setDevices((prev) =>
-              prev.filter((device) => device.id !== payload.old.id)
-            );
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
+  const [connected, setConnected] = useState(false);
 
   const fetchDevices = async () => {
     try {
-      setLoading(true);
-      const { data, error: fetchError } = await supabase
-        .from('devices')
-        .select('*')
-        .order('last_seen_at', { ascending: false });
+      setError(null);
 
-      if (fetchError) throw fetchError;
-      setDevices(data || []);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000); // Reduced from 5s to 3s
+
+      try {
+        const response = await fetch(`${AGENT_API_URL}/devices`, {
+          signal: controller.signal,
+        });
+        
+        clearTimeout(timeoutId);
+
+        // Check if response is JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          throw new Error('Service not responding correctly');
+        }
+
+        const data = await response.json();
+
+        // Handle both success wrapper and direct response formats
+        if (data.success !== false) {
+          setDevices(data.devices || []);
+          setConnected(data.connected || false);
+          // Clear error if we successfully connected
+          if (data.connected) {
+            setError(null);
+          }
+          setLoading(false);
+        } else {
+          setError(data.message || 'Failed to fetch devices');
+          setConnected(false);
+          setDevices([]);
+          setLoading(false);
+        }
+      } catch (fetchError: any) {
+        clearTimeout(timeoutId);
+        
+        if (fetchError.name === 'AbortError') {
+          setError('Service timeout');
+        } else {
+          throw fetchError; // Re-throw non-abort errors
+        }
+        setConnected(false);
+        setDevices([]);
+        setLoading(false);
+      }
     } catch (err: any) {
-      setError(err.message);
-      console.error('Error fetching devices:', err);
-    } finally {
+      setError(err.message || 'Network error');
+      setConnected(false);
+      setDevices([]);
       setLoading(false);
     }
   };
-
-  return { devices, loading, error, refetch: fetchDevices };
-}
-
-export function useRealtimeTelemetry(deviceId?: string) {
-  const [telemetry, setTelemetry] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!deviceId) return;
-
     // Initial fetch
-    fetchTelemetry();
+    setLoading(true);
+    fetchDevices();
 
-    // Subscribe to realtime changes
-    const channel = supabase
-      .channel(`telemetry-${deviceId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'telemetry_data',
-          filter: `device_id=eq.${deviceId}`
-        },
-        (payload: any) => {
-          console.log('New telemetry:', payload);
-          setTelemetry((prev) => [payload.new, ...prev].slice(0, 100)); // Keep last 100
-        }
-      )
-      .subscribe();
+    // Poll every 15 seconds for real-time updates (faster polling)
+    const interval = setInterval(fetchDevices, 15000);
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [deviceId]);
+    return () => clearInterval(interval);
+  }, []);
 
-  const fetchTelemetry = async () => {
-    if (!deviceId) return;
-    
-    try {
-      setLoading(true);
-      const { data } = await supabase
-        .from('telemetry_data')
-        .select('*')
-        .eq('device_id', deviceId)
-        .order('timestamp', { ascending: false })
-        .limit(100);
-
-      setTelemetry(data || []);
-    } catch (err) {
-      console.error('Error fetching telemetry:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return { telemetry, loading, refetch: fetchTelemetry };
+  return { devices, loading, error, connected, refetch: fetchDevices };
 }

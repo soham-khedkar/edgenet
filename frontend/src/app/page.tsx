@@ -1,17 +1,54 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import DeviceExplorer from '@/components/DeviceExplorer';
 import TerminalPanel from '@/components/TerminalPanel';
 import PhoneMockup from '@/components/PhoneMockup';
 import BandwidthControl from '@/components/BandwidthControl';
 import { useRealtimeDevices } from '@/hooks/useRealtimeData';
+import { useConnectionStatus } from '@/hooks/useConnectionStatus';
 import { DeviceGridSkeleton, StatsSkeleton } from '@/components/LoadingSkeleton';
 import { Broadcast, Devices as DevicesIcon } from '@phosphor-icons/react';
 
 export default function Home() {
-  const { devices, loading, error, refetch } = useRealtimeDevices();
+  const { devices, loading, error, refetch, connected } = useRealtimeDevices();
+  const { isConnected } = useConnectionStatus();
+  const [agentHealthy, setAgentHealthy] = useState(true);
+  const [configExists, setConfigExists] = useState(false);
+
+  // Check if agent service is running and if config exists
+  useEffect(() => {
+    const checkHealth = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/health', { 
+          signal: AbortSignal.timeout(2000) 
+        });
+        setAgentHealthy(response.ok);
+      } catch {
+        setAgentHealthy(false);
+      }
+    };
+    
+    const checkConfig = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/config-exists');
+        const data = await response.json();
+        setConfigExists(data.exists || false);
+      } catch {
+        setConfigExists(false);
+      }
+    };
+    
+    checkHealth();
+    checkConfig();
+    const healthInterval = setInterval(checkHealth, 30000);
+    const configInterval = setInterval(checkConfig, 60000);
+    return () => {
+      clearInterval(healthInterval);
+      clearInterval(configInterval);
+    };
+  }, []);
 
   // Fallback polling for compatibility (if realtime fails)
   useEffect(() => {
@@ -37,15 +74,50 @@ export default function Home() {
             <h1 className="text-2xl md:text-3xl font-pixel mb-2">NETWORK_DASHBOARD</h1>
             <p className="text-xs font-mono text-gray-600">D-Link DIR-615 • Real-time monitoring</p>
           </div>
-          <div className="neo-card bg-[#FFD600] px-5 py-3">
+          <div className={`neo-card px-5 py-3 ${connected ? 'bg-[#FFD600]' : 'bg-gray-400'}`}>
             <div className="font-pixel text-[9px] mb-1">STATUS</div>
-            <div className="font-mono text-base font-bold">ONLINE</div>
+            <div className="font-mono text-base font-bold">{connected ? 'ONLINE' : 'OFFLINE'}</div>
           </div>
         </div>
         
         {/* Separator */}
         <div className="h-6 grid-bg opacity-20"></div>
       </section>
+
+      {/* Error Alert - Only show if not connected AND has error */}
+      {error && !connected && (
+        <div className="neo-card bg-red-100 border-red-500 p-5 mb-8">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="font-pixel text-sm text-red-700 mb-2">
+                {!agentHealthy ? 'SERVICE_UNAVAILABLE' : !configExists ? 'ROUTER_NOT_CONFIGURED' : 'CONNECTION_ERROR'}
+              </div>
+              <p className="font-mono text-sm text-red-600">{error}</p>
+              {!agentHealthy && (
+                <p className="font-mono text-xs text-red-500 mt-2">
+                  Network monitoring service is not running. Please contact your administrator.
+                </p>
+              )}
+              {agentHealthy && !configExists && (
+                <p className="font-mono text-xs text-red-500 mt-2">
+                  Router credentials not configured. Go to <Link href="/setup" className="underline font-bold">Setup</Link> to configure.
+                </p>
+              )}
+              {agentHealthy && configExists && (
+                <p className="font-mono text-xs text-red-500 mt-2">
+                  Unable to connect to router. Check if router is reachable or reconfigure in <Link href="/setup" className="underline font-bold">Setup</Link>.
+                </p>
+              )}
+            </div>
+            <button
+              onClick={refetch}
+              className="neo-button bg-red-500 text-white px-4 py-2 font-pixel text-xs whitespace-nowrap"
+            >
+              RETRY
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Stats Grid */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">

@@ -2,22 +2,24 @@
 .env
 .env.local
 .env.*.local
+*.env
+!.env.example
 agent/.env
 backend/.env
-
-# MCP configuration (contains database connection string)
-.vscode/mcp.json
+frontend/.env
+frontend/.env.local
 
 # Dependencies
 node_modules/
 venv/
 __pycache__/
+.next/
 
 # Build outputs
 dist/
 build/
 *.js.map
-*.d.ts
+*.d.ts.map
 
 # Logs
 *.log
@@ -28,9 +30,7 @@ logs/
 Thumbs.db
 
 # IDE
-.vscode/*
-!.vscode/settings.json
-!.vscode/extensions.json
+.vscode/
 .idea/
 
 # Cache
@@ -38,13 +38,21 @@ Thumbs.db
 *.pyc
 *.pyo
 
-# Data files (can be regenerated)
+# Data & config files with sensitive info
 data.json
 qos_probe_results.json
+agent/data/*.json
+!agent/data/.gitkeep
 
-# Backend config files (router configs)
-backend/config/*.json
-!backend/config/.gitkeep
+# Documentation and SQL (keep only root README)
+*.sql
+DEPLOYMENT.md
+*.md
+!README.md
 
-# Data files
-data.json
+# Temporary/test files
+setup-env.ps1
+start-all.ps1
+test.ps1
+*.bak
+*.tmp
