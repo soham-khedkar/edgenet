@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+import { supabase } from '@/lib/supabase';
 
 interface TopDeviceData {
   device: string;
@@ -40,18 +39,36 @@ export function TopDevicesChart({}: TopDevicesChartProps) {
   const fetchTopDevices = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/api/statistics/top-devices`);
-      if (response.ok) {
-        const jsonData = await response.json();
-        const parsed = jsonData.data.map((d: any, i: number) => ({
-          device: d.deviceName || 'Unknown',
-          usage: d.totalData || 0,
+      
+      // Fetch devices from Supabase
+      const { data: devices, error } = await supabase
+        .from('devices')
+        .select('*')
+        .order('last_seen_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching top devices:', error);
+        setData([]);
+        setLoading(false);
+        return;
+      }
+
+      // Calculate total data usage per device and get top 5
+      const devicesWithUsage = devices?.map(device => ({
+        name: device.hostname || device.mac_address,
+        totalBytes: parseInt(device.rx_bytes_total || '0') + parseInt(device.tx_bytes_total || '0')
+      })) || [];
+
+      const topDevices = devicesWithUsage
+        .sort((a, b) => b.totalBytes - a.totalBytes)
+        .slice(0, 5)
+        .map((d, i) => ({
+          device: d.name,
+          usage: parseFloat((d.totalBytes / (1024 * 1024 * 1024)).toFixed(2)), // Convert to GB
           color: COLORS[i % COLORS.length]
         }));
-        setData(parsed);
-      } else {
-        setData([]);
-      }
+
+      setData(topDevices);
     } catch (error) {
       console.error('Failed to fetch top devices:', error);
       setData([]);

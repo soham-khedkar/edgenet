@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+import { supabase } from '@/lib/supabase';
 
 interface DeviceData {
   name: string;
@@ -41,27 +40,40 @@ export function DeviceUsageChart({}: DeviceUsageChartProps) {
   const fetchDeviceData = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/api/statistics/device-usage`);
-      if (response.ok) {
-        const jsonData = await response.json();
-        
-        // Sort by usage and get top 5
-        const sortedData = (jsonData.data || [])
-          .sort((a: any, b: any) => b.usage - a.usage)
-          .slice(0, 5);
-        
-        const total = sortedData.reduce((sum: number, d: any) => sum + d.usage, 0);
-        
-        const parsed = sortedData.map((d: any, i: number) => ({
-          name: d.deviceName || 'Unknown Device',
-          value: total > 0 ? Math.round((d.usage / total) * 100) : 0,
-          color: COLORS[i % COLORS.length]
-        }));
-        
-        setData(parsed);
-      } else {
+      
+      // Fetch devices from Supabase
+      const { data: devices, error } = await supabase
+        .from('devices')
+        .select('*')
+        .order('last_seen_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching device data:', error);
         setData([]);
+        setLoading(false);
+        return;
       }
+
+      // Calculate total bandwidth per device
+      const devicesWithUsage = devices?.map(device => ({
+        name: device.hostname || device.mac_address,
+        usage: parseInt(device.rx_bytes_total || '0') + parseInt(device.tx_bytes_total || '0')
+      })) || [];
+
+      // Sort by usage and get top 5
+      const sortedData = devicesWithUsage
+        .sort((a, b) => b.usage - a.usage)
+        .slice(0, 5);
+      
+      const total = sortedData.reduce((sum, d) => sum + d.usage, 0);
+      
+      const parsed = sortedData.map((d, i) => ({
+        name: d.name || 'Unknown Device',
+        value: total > 0 ? Math.round((d.usage / total) * 100) : 0,
+        color: COLORS[i % COLORS.length]
+      }));
+      
+      setData(parsed);
     } catch (error) {
       console.error('Failed to fetch device usage:', error);
       setData([]);

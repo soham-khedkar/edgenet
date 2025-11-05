@@ -1,49 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { ChartLine, Database, TrendUp, CaretLeft, Clock } from '@phosphor-icons/react';
 import { BandwidthChart } from '@/components/charts/BandwidthChart';
 import { DeviceUsageChart } from '@/components/charts/DeviceUsageChart';
 import { TopDevicesChart } from '@/components/charts/TopDevicesChart';
 import { HourlyPatternsChart } from '@/components/charts/HourlyPatternsCharts';
-
-// API base URL
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-
-interface StatisticsData {
-  totalDevices: number;
-  totalBandwidthUsed: string;
-  averageDevicesOnline: number;
-}
+import { useStatistics } from '@/hooks/useStatistics';
 
 export default function StatisticsPage() {
   const [timeRange, setTimeRange] = useState<'24h' | '7d' | '30d'>('24h');
-  const [stats, setStats] = useState<StatisticsData>({
-    totalDevices: 0,
-    totalBandwidthUsed: '0 GB',
-    averageDevicesOnline: 0
-  });
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchStatistics();
-  }, [timeRange]);
-
-  const fetchStatistics = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/api/statistics/summary?range=${timeRange}`);
-      if (response.ok) {
-        const data = await response.json();
-        setStats(data);
-      }
-    } catch (error) {
-      console.error('Failed to fetch statistics:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { stats, loading, error } = useStatistics(timeRange);
 
   return (
     <main className="min-h-screen bg-[#F5F5F5] px-6 md:px-10 pb-10">

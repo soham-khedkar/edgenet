@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+import { supabase } from '@/lib/supabase';
 
 interface HourlyData {
   hour: string;
@@ -37,28 +36,37 @@ export function HourlyPatternsChart({ timeRange }: HourlyPatternsChartProps) {
   const fetchHourlyData = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/api/statistics/hourly-patterns?range=${timeRange}`);
-      if (response.ok) {
-        const jsonData = await response.json();
-        
-        // Group by hour and sum across days
-        const hourlyMap = new Map<number, number>();
-        
-        jsonData.data.forEach((d: any) => {
-          const hour = d.hour;
-          hourlyMap.set(hour, (hourlyMap.get(hour) || 0) + d.value);
-        });
-        
-        // Create array with all 24 hours
-        const parsed = Array.from({ length: 24 }, (_, i) => ({
-          hour: `${i.toString().padStart(2, '0')}:00`,
-          connections: Math.round(hourlyMap.get(i) || 0)
-        }));
-        
-        setData(parsed);
-      } else {
+      
+      // Fetch devices from Supabase
+      const { data: devices, error } = await supabase
+        .from('devices')
+        .select('*')
+        .order('last_seen_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching hourly data:', error);
         setData([]);
+        setLoading(false);
+        return;
       }
+
+      // Create hourly distribution based on device activity
+      const hourlyMap = new Map<number, number>();
+      
+      devices?.forEach((device) => {
+        if (device.last_seen_at) {
+          const hour = new Date(device.last_seen_at).getHours();
+          hourlyMap.set(hour, (hourlyMap.get(hour) || 0) + 1);
+        }
+      });
+      
+      // Create array with all 24 hours
+      const parsed = Array.from({ length: 24 }, (_, i) => ({
+        hour: `${i.toString().padStart(2, '0')}:00`,
+        connections: hourlyMap.get(i) || 0
+      }));
+      
+      setData(parsed);
     } catch (error) {
       console.error('Failed to fetch hourly patterns:', error);
       setData([]);

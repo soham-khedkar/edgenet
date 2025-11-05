@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+import { supabase } from '@/lib/supabase';
 
 interface BandwidthDataPoint {
   time: string;
@@ -20,8 +19,8 @@ const CustomTooltip = ({ active, payload }: any) => {
     return (
       <div className="neo-card bg-[#FFD600] p-3 text-xs font-mono">
         <div className="mb-1">TIME: {payload[0].payload.time}</div>
-        <div className="mb-1">DOWN: {payload[0].value?.toFixed(2)} MB/s</div>
-        <div>UP: {payload[1]?.value?.toFixed(2)} MB/s</div>
+        <div className="mb-1">DOWN: {payload[0].value?.toFixed(2)} MB</div>
+        <div>UP: {payload[1]?.value?.toFixed(2)} MB</div>
       </div>
     );
   }
@@ -39,21 +38,31 @@ export function BandwidthChart({ timeRange }: BandwidthChartProps) {
   const fetchBandwidthData = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/api/statistics/bandwidth?range=${timeRange}`);
-      if (response.ok) {
-        const jsonData = await response.json();
-        const parsedData = jsonData.data.map((d: any) => {
-          const date = new Date(d.timestamp);
-          return {
-            time: date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-            download: d.download,
-            upload: d.upload
-          };
-        });
-        setData(parsedData);
-      } else {
+      
+      // Fetch devices from Supabase
+      const { data: devices, error } = await supabase
+        .from('devices')
+        .select('*')
+        .order('last_seen_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching bandwidth data:', error);
         setData([]);
+        setLoading(false);
+        return;
       }
+
+      // Create bandwidth data points from device data
+      const chartData = devices?.slice(0, 10).map((device, index) => {
+        const date = new Date(device.last_seen_at);
+        return {
+          time: date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+          download: parseFloat((parseInt(device.rx_bytes_total || '0') / (1024 * 1024)).toFixed(2)),
+          upload: parseFloat((parseInt(device.tx_bytes_total || '0') / (1024 * 1024)).toFixed(2))
+        };
+      }).reverse() || [];
+
+      setData(chartData);
     } catch (error) {
       console.error('Failed to fetch bandwidth data:', error);
       setData([]);
