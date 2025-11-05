@@ -16,12 +16,17 @@ logger = logging.getLogger(__name__)
 class RouterClient:
     """D-Link DIR-615 JSON-RPC Client with custom digest auth"""
     
-    def __init__(self):
+    def __init__(self, router_ip=None, username=None, password=None):
         self.session = requests.Session()
         self.logged_in = False
         self.session_cookies = {}
         self.auth_params = {}
         self.nc = 0
+        
+        # Use provided values or fallback to Config
+        self.base_url = f'http://{router_ip}' if router_ip else getattr(Config, 'ROUTER_URL', 'http://192.168.0.1')
+        self.username = username if username else getattr(Config, 'ROUTER_USERNAME', 'admin')
+        self.password = password if password else getattr(Config, 'ROUTER_PASSWORD', '')
         
         # Set base headers
         self.session.headers.update({
@@ -29,8 +34,8 @@ class RouterClient:
             'Accept': 'application/json, text/plain, */*',
             'Accept-Language': 'en-US,en;q=0.9',
             'Content-Type': 'application/json;charset=UTF-8',
-            'Origin': Config.ROUTER_URL,
-            'Referer': f'{Config.ROUTER_URL}/admin/index.html',
+            'Origin': self.base_url,
+            'Referer': f'{self.base_url}/admin/index.html',
             'Connection': 'keep-alive'
         })
     
@@ -102,7 +107,7 @@ class RouterClient:
             logger.info('Attempting to login to router...')
             
             # Step 1: Get authentication challenge
-            auth_url = f'{Config.ROUTER_URL}/devinfo?need_auth=1'
+            auth_url = f'{self.base_url}/devinfo?need_auth=1'
             logger.debug(f'Requesting auth challenge from: {auth_url}')
             
             response = self.session.get(auth_url, timeout=10)
@@ -142,8 +147,8 @@ class RouterClient:
             # Step 2: Calculate digest and make authenticated request
             # Try authenticating to /jsonrpc endpoint
             digest = self._calculate_digest(
-                username=Config.ROUTER_USERNAME,
-                password=Config.ROUTER_PASSWORD,
+                username=self.username,
+                password=self.password,
                 method='POST',
                 uri='/jsonrpc',
                 realm=realm,
@@ -167,7 +172,7 @@ class RouterClient:
             
             logger.debug('Testing authentication with JSON-RPC call...')
             jsonrpc_response = self.session.post(
-                f'{Config.ROUTER_URL}/jsonrpc',
+                f'{self.base_url}/jsonrpc',
                 json=test_payload,
                 timeout=10
             )
@@ -179,7 +184,7 @@ class RouterClient:
                 logger.info('✅ Successfully authenticated to router!')
                 
                 # Set additional cookies that might be needed
-                self.session.cookies.set('user_login', Config.ROUTER_USERNAME)
+                self.session.cookies.set('user_login', self.username)
                 self.session.cookies.set('device_mode', 'router')
                 
                 return True
@@ -230,7 +235,7 @@ class RouterClient:
         for attempt in range(max_retries):
             try:
                 response = self.session.post(
-                    f'{Config.ROUTER_URL}/jsonrpc',
+                    f'{self.base_url}/jsonrpc',
                     json=payload,
                     timeout=15  # Increased timeout
                 )
@@ -242,7 +247,7 @@ class RouterClient:
                     if self.login():
                         # Retry request
                         response = self.session.post(
-                            f'{Config.ROUTER_URL}/jsonrpc',
+                            f'{self.base_url}/jsonrpc',
                             json=payload,
                             timeout=15
                         )
