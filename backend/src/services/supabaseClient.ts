@@ -79,6 +79,9 @@ const supabaseAdmin: SupabaseClient<Database> = createClient<Database>(
     }
 );
 
+console.log('🔑 Supabase Service Role Key:', process.env.SUPABASE_SERVICE_ROLE_KEY ? 'SET ✅' : 'MISSING ❌');
+console.log('🔑 Using key:', (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY).substring(0, 20) + '...');
+
 if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
     console.warn('⚠️  SUPABASE_SERVICE_ROLE_KEY not set - using anon key (RLS policies will apply)');
     console.warn('   For production, add service role key to bypass RLS for server-side operations');

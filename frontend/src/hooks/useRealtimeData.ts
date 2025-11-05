@@ -25,8 +25,8 @@ export function useRealtimeDevices() {
         if (backendResponse.ok) {
           const backendData = await backendResponse.json();
           
+          // Use backend if it has devices
           if (backendData.devices && backendData.devices.length > 0) {
-            // Transform backend format to match expected format
             const transformedDevices = backendData.devices.map((device: any) => ({
               mac: device.mac_address,
               hostname: device.hostname,
@@ -54,10 +54,10 @@ export function useRealtimeDevices() {
           }
         }
       } catch (backendError) {
-        console.log('Backend not available, trying agent...');
+        console.log('Backend not available, trying local agent...');
       }
 
-      // Fallback to agent (localhost:5000)
+      // Fallback to local agent (localhost:5000)
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 3000);
 
@@ -94,9 +94,9 @@ export function useRealtimeDevices() {
         clearTimeout(timeoutId);
         
         if (fetchError.name === 'AbortError') {
-          setError('No agent running. Please start the EdgeNet agent.');
+          setError('CONNECTION_ERROR');
         } else {
-          setError('Unable to connect to data source');
+          setError('CONNECTION_ERROR');
         }
         setConnected(false);
         setDevices([]);

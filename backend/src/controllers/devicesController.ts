@@ -20,6 +20,10 @@ export const getAllDevices = async (req: Request, res: Response): Promise<void> 
         const activeOnly = req.query.active === 'true';
         const limit = Math.min(parseInt(req.query.limit as string) || 100, 500);
 
+        console.log('[getAllDevices] Starting query...');
+        console.log('[getAllDevices] Using supabaseAdmin client');
+        console.log('[getAllDevices] activeOnly:', activeOnly);
+
         // Build query - use admin client to bypass RLS for now
         // TODO: Add authentication and filter by user_id from JWT
         let query = supabaseAdmin
@@ -31,15 +35,22 @@ export const getAllDevices = async (req: Request, res: Response): Promise<void> 
         // Filter for active devices only (last seen within 5 minutes)
         if (activeOnly) {
             const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+            console.log('[getAllDevices] Filtering for devices after:', fiveMinutesAgo);
             query = query.gte('last_seen_at', fiveMinutesAgo);
         }
 
         const { data, error } = await query;
 
-        if (error) throw error;
+        if (error) {
+            console.error('[getAllDevices] Supabase error:', error);
+            throw error;
+        }
 
         // Log for debugging
         console.log(`[${new Date().toLocaleTimeString()}] Fetched ${data?.length || 0} devices`);
+        if (data && data.length > 0) {
+            console.log('[getAllDevices] First device:', JSON.stringify(data[0], null, 2));
+        }
 
         res.status(200).json({
             count: data?.length || 0,
