@@ -13,3 +13,9 @@ python-dotenv==1.0.0
 
 # Retry logic for network errors
 tenacity==8.2.3
+
+# Background task scheduler for periodic data sync
+APScheduler==3.10.4
+
+# Supabase client for authentication
+supabase==2.10.0

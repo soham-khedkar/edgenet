@@ -14,6 +14,10 @@ __pycache__/
 .env
 .env.local
 
+# Sensitive data files
+data/router_config.json
+data/session.json
+
 # IDE files
 .vscode/
 .idea/

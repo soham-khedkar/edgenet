@@ -7,7 +7,7 @@ dotenv.config();
 
 // Validate required environment variables exist
 if (!process.env.SUPABASE_URL || !process.env.SUPABASE_KEY) {
-    throw new Error('Missing SUPABASE_URL or SUPABASE_ANON_KEY in .env file');
+    throw new Error('Missing SUPABASE_URL or SUPABASE_KEY in .env file');
 }
 
 // Database type definitions for type safety
@@ -54,6 +54,7 @@ export interface Database {
 }
 
 // Create Supabase client with anon key (uses RLS policies)
+// This is used for frontend-facing endpoints that require user authentication
 const supabase: SupabaseClient<Database> = createClient<Database>(
     process.env.SUPABASE_URL,
     process.env.SUPABASE_KEY,
@@ -64,6 +65,24 @@ const supabase: SupabaseClient<Database> = createClient<Database>(
         }
     }
 );
+
+// Create admin client with service role key (bypasses RLS)
+// This is used for server-side operations like telemetry ingestion
+const supabaseAdmin: SupabaseClient<Database> = createClient<Database>(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY, // Fallback to anon key
+    {
+        auth: {
+            autoRefreshToken: false,
+            persistSession: false
+        }
+    }
+);
+
+if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    console.warn('⚠️  SUPABASE_SERVICE_ROLE_KEY not set - using anon key (RLS policies will apply)');
+    console.warn('   For production, add service role key to bypass RLS for server-side operations');
+}
 
 // Test database connection on startup
 async function testConnection(): Promise<void> {
@@ -85,4 +104,4 @@ async function testConnection(): Promise<void> {
 }
 
 // Export client and utilities
-export { supabase, testConnection };
+export { supabase, supabaseAdmin, testConnection };

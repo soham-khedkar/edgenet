@@ -1,6 +1,6 @@
 // Devices Controller - Handles device data queries for frontend
 import { Request, Response } from 'express';
-import { supabase } from '../services/supabaseClient.js';
+import { supabase, supabaseAdmin } from '../services/supabaseClient.js';
 
 /**
  * GET /api/devices
@@ -20,8 +20,9 @@ export const getAllDevices = async (req: Request, res: Response): Promise<void> 
         const activeOnly = req.query.active === 'true';
         const limit = Math.min(parseInt(req.query.limit as string) || 100, 500);
 
-        // Build query
-        let query = supabase
+        // Build query - use admin client to bypass RLS for now
+        // TODO: Add authentication and filter by user_id from JWT
+        let query = supabaseAdmin
             .from('devices')
             .select('*')
             .order('last_seen_at', { ascending: false })

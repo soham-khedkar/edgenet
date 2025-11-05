@@ -6,12 +6,16 @@ Provides endpoints for the backend to test router connections
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.executors.pool import ThreadPoolExecutor
 import logging
 import json
 import os
 import time
+import requests
 from router_client import RouterClient
 from config import Config
+from supabase import create_client, Client
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})  # Enable CORS for all routes with wildcard
@@ -23,6 +27,11 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S'
 )
 logger = logging.getLogger(__name__)
+
+# Global variables for Supabase authentication
+_supabase_client: Client = None
+_user_id: str = None
+_auth_token: str = None
 
 # Path to store router config persistently (works in Docker and locally)
 CONFIG_DIR = os.getenv('CONFIG_DIR', os.path.join(os.path.dirname(__file__), 'data'))
@@ -62,6 +71,155 @@ def save_config_to_file(config_data):
 # Load saved config on startup
 load_saved_config()
 
+# Path for storing auth session
+SESSION_FILE_PATH = os.path.join(CONFIG_DIR, 'session.json')
+
+def save_auth_session(session_data):
+    """Save Supabase session (refresh token) to file"""
+    try:
+        os.makedirs(os.path.dirname(SESSION_FILE_PATH), exist_ok=True)
+        session_info = {
+            'refresh_token': session_data.refresh_token,
+            'user_id': session_data.user.id,
+            'email': session_data.user.email,
+            'expires_at': session_data.expires_at
+        }
+        with open(SESSION_FILE_PATH, 'w') as f:
+            json.dump(session_info, f, indent=2)
+        logger.info(f"✅ Saved auth session to {SESSION_FILE_PATH}")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to save session: {e}")
+        return False
+
+def load_auth_session():
+    """Load saved Supabase session"""
+    try:
+        if os.path.exists(SESSION_FILE_PATH):
+            with open(SESSION_FILE_PATH, 'r') as f:
+                return json.load(f)
+    except Exception as e:
+        logger.warning(f"Could not load saved session: {e}")
+    return None
+
+# Supabase authentication
+def authenticate_to_supabase():
+    """Authenticate to Supabase and get user_id (uses refresh token if available)"""
+    global _supabase_client, _user_id, _auth_token
+    
+    try:
+        if not os.getenv('SUPABASE_URL') or not os.getenv('SUPABASE_KEY'):
+            logger.warning("⚠️ Supabase credentials not configured")
+            return False
+        
+        # Create Supabase client
+        _supabase_client = create_client(
+            os.getenv('SUPABASE_URL'),
+            os.getenv('SUPABASE_KEY')
+        )
+        
+        # Try to use saved refresh token first
+        saved_session = load_auth_session()
+        if saved_session and 'refresh_token' in saved_session:
+            try:
+                logger.info("🔄 Attempting to refresh session with saved token...")
+                auth_response = _supabase_client.auth.set_session(
+                    saved_session['refresh_token'],
+                    saved_session.get('access_token', '')
+                )
+                
+                if auth_response.user:
+                    _user_id = auth_response.user.id
+                    _auth_token = auth_response.session.access_token
+                    logger.info(f"✅ Authenticated using saved session for {saved_session.get('email', 'user')}")
+                    logger.info(f"✅ User ID: {_user_id}")
+                    # Update session file with new tokens
+                    save_auth_session(auth_response.session)
+                    return True
+            except Exception as e:
+                logger.warning(f"⚠️ Saved session expired or invalid: {e}")
+                logger.info("🔄 Falling back to email/password authentication...")
+        
+        # Fallback: Sign in with email/password
+        if not Config.USER_EMAIL or not Config.USER_PASSWORD:
+            logger.warning("⚠️ USER_EMAIL or USER_PASSWORD not configured")
+            logger.warning("💡 Please add credentials to .env or ensure session.json exists")
+            return False
+        
+        auth_response = _supabase_client.auth.sign_in_with_password({
+            "email": Config.USER_EMAIL,
+            "password": Config.USER_PASSWORD
+        })
+        
+        if auth_response.user:
+            _user_id = auth_response.user.id
+            _auth_token = auth_response.session.access_token
+            logger.info(f"✅ Authenticated to Supabase as {Config.USER_EMAIL}")
+            logger.info(f"✅ User ID: {_user_id}")
+            
+            # Save session for future use
+            save_auth_session(auth_response.session)
+            logger.info("💾 Session saved - you can now remove USER_PASSWORD from .env for security")
+            
+            return True
+        else:
+            logger.error("❌ Supabase authentication failed")
+            return False
+            
+    except Exception as e:
+        logger.error(f"❌ Supabase authentication error: {e}")
+        return False
+
+def fetch_router_config_from_supabase():
+    """
+    Fetch router configuration from user_router_configs table in Supabase
+    Updates Config class with cloud-based settings
+    """
+    global _supabase_client, _user_id
+    
+    if not _supabase_client or not _user_id:
+        logger.warning("⚠️ Not authenticated to Supabase, cannot fetch router config")
+        return False
+    
+    try:
+        logger.info("🔍 Fetching router configuration from Supabase...")
+        
+        # Query user_router_configs for this user
+        response = _supabase_client.table('user_router_configs') \
+            .select('*') \
+            .eq('user_id', _user_id) \
+            .execute()
+        
+        if response.data and len(response.data) > 0:
+            router_config = response.data[0]
+            
+            # Update Config class with cloud settings
+            Config.update_from_cloud_config(router_config)
+            
+            logger.info(f"✅ Router config loaded from cloud:")
+            logger.info(f"   Router IP: {Config.ROUTER_IP}")
+            logger.info(f"   Username: {Config.ROUTER_USERNAME}")
+            logger.info(f"   Poll Interval: {Config.POLL_INTERVAL}s")
+            
+            # Update router URL
+            Config.ROUTER_URL = f'http://{Config.ROUTER_IP}'
+            
+            return True
+        else:
+            logger.warning("⚠️ No router config found in Supabase for this user")
+            logger.info("💡 Using fallback config from environment variables")
+            logger.info(f"   Router IP: {Config.ROUTER_IP}")
+            return False
+            
+    except Exception as e:
+        logger.error(f"❌ Error fetching router config from Supabase: {e}")
+        logger.info("💡 Using fallback config from environment variables")
+        return False
+
+# Authenticate on startup and fetch router config
+if authenticate_to_supabase():
+    fetch_router_config_from_supabase()
+
 # Global router client instance (reuse session)
 _router_client = None
 _last_login_time = 0
@@ -84,6 +242,114 @@ def get_router_client():
             return None
     
     return _router_client
+
+# ============================================
+# BACKGROUND CRON JOB - Push data to backend
+# ============================================
+
+def normalize_device_data(device):
+    """
+    Normalize router device data to match backend expected format
+    Maps D-Link router fields to backend schema
+    """
+    return {
+        'mac': device.get('mac', '').upper(),  # Normalize MAC to uppercase to avoid duplicates
+        'hostname': device.get('hostname'),
+        'ip': device.get('ip'),  # D-Link returns 'ip', backend expects 'ip'
+        'band': device.get('band'),
+        'ssid': device.get('SSID'),  # D-Link returns 'SSID' (uppercase)
+        'wireless_mode': device.get('mode'),  # D-Link returns 'mode'
+        'signal_strength': device.get('rssi'),  # D-Link returns 'rssi' (Received Signal Strength Indicator)
+        'last_tx_rate': device.get('lastTxRate'),  # D-Link returns 'lastTxRate'
+        'rx_bytes': device.get('rx_bytes', 0),
+        'tx_bytes': device.get('tx_bytes', 0),
+        'online_minutes': device.get('online', 0) // 60 if device.get('online') else 0,  # Convert seconds to minutes
+        'power_saving': device.get('sleep', False),  # D-Link returns 'sleep'
+        'connection_time': device.get('online', 0)  # Keep seconds for telemetry
+    }
+
+def push_telemetry_to_backend():
+    """Background task: Fetch devices from router and push to backend"""
+    global _user_id
+    
+    print("========== CRON JOB EXECUTING ==========", flush=True)
+    logger.info("🔄 Cron: Starting telemetry push...")
+    
+    try:
+        # Check if user is authenticated
+        if not _user_id:
+            logger.warning("⚠️ Cron: Not authenticated to Supabase, skipping telemetry push")
+            return
+        
+        logger.info(f"✅ Cron: User authenticated as {_user_id}")
+        
+        router = get_router_client()
+        
+        if not router or not router.logged_in:
+            logger.warning("⚠️ Cron: Router not connected, skipping telemetry push")
+            return
+        
+        logger.info("✅ Cron: Router connected")
+        
+        # Get devices from router
+        raw_devices = router.get_connected_devices()
+        
+        if not raw_devices:
+            logger.info("ℹ️ Cron: No devices found")
+            return
+        
+        logger.info(f"✅ Cron: Found {len(raw_devices)} devices")
+        
+        # Normalize device data to match backend schema
+        devices = [normalize_device_data(d) for d in raw_devices]
+        
+        # Prepare telemetry payload with user_id
+        payload = {
+            'user_id': _user_id,
+            'timestamp': time.time(),
+            'devices': devices,
+            'device_count': len(devices)
+        }
+        
+        # Push to backend
+        backend_url = Config.BACKEND_API_URL
+        response = requests.post(
+            backend_url,
+            json=payload,
+            timeout=10,
+            headers={'Content-Type': 'application/json'}
+        )
+        
+        if response.status_code == 200 or response.status_code == 201:
+            logger.info(f"✅ Cron: Pushed {len(devices)} devices to backend for user {Config.USER_EMAIL}")
+        else:
+            logger.warning(f"⚠️ Cron: Backend returned status {response.status_code}: {response.text}")
+            
+    except requests.exceptions.RequestException as e:
+        logger.error(f"❌ Cron: Network error pushing to backend: {e}")
+    except Exception as e:
+        logger.error(f"❌ Cron: Error in telemetry push: {e}")
+
+# Initialize background scheduler with daemon mode
+executors = {
+    'default': ThreadPoolExecutor(max_workers=1)
+}
+scheduler = BackgroundScheduler(executors=executors, daemon=True)
+scheduler.add_job(
+    func=push_telemetry_to_backend,
+    trigger="interval",
+    seconds=Config.POLL_INTERVAL,  # Default: 30 seconds
+    id='telemetry_sync',
+    name='Push telemetry to backend',
+    replace_existing=True,
+    misfire_grace_time=60,  # Allow 60 seconds grace period
+    max_instances=1,  # Only one instance at a time
+    coalesce=True  # Combine missed runs into one
+)
+
+# ============================================
+# API ROUTES
+# ============================================
 
 @app.route('/health', methods=['GET'])
 def health():
@@ -435,6 +701,24 @@ def check_config_exists():
         })
 
 if __name__ == '__main__':
+    logger.info('=' * 50)
     logger.info('Starting EdgeNet Agent API...')
-    logger.info('Running on http://localhost:5000')
-    app.run(host='0.0.0.0', port=5000, debug=False)
+    logger.info(f'Backend API: {Config.BACKEND_API_URL}')
+    logger.info(f'Sync Interval: {Config.POLL_INTERVAL} seconds')
+    logger.info('=' * 50)
+    
+    # Start background scheduler
+    scheduler.start()
+    logger.info('✅ Background telemetry sync started')
+    
+    # Test: Run the job once immediately on startup
+    logger.info('🧪 Testing cron job - running once immediately...')
+    push_telemetry_to_backend()
+    
+    try:
+        # Run Flask app
+        app.run(host='0.0.0.0', port=5000, debug=False)
+    except (KeyboardInterrupt, SystemExit):
+        # Shutdown scheduler on exit
+        scheduler.shutdown()
+        logger.info('🛑 Agent stopped')

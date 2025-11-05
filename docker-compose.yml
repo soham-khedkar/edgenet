@@ -8,6 +8,7 @@ services:
       - NODE_ENV=production
       - SUPABASE_URL=${SUPABASE_URL}
       - SUPABASE_KEY=${SUPABASE_KEY}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
       - AGENT_API_URL=http://agent:5000
     depends_on:
       - agent
@@ -22,8 +23,10 @@ services:
       - ROUTER_IP=${ROUTER_IP}
       - ROUTER_USERNAME=${ROUTER_USERNAME}
       - ROUTER_PASSWORD=${ROUTER_PASSWORD}
-      - POLLING_INTERVAL=${POLLING_INTERVAL:-30}
-      - BACKEND_URL=http://backend:4000
+      - POLL_INTERVAL=${POLLING_INTERVAL:-30}
+      - BACKEND_API_URL=http://backend:4000/api/telemetry
+      - USER_EMAIL=${USER_EMAIL}
+      - USER_PASSWORD=${USER_PASSWORD}
       - SUPABASE_URL=${SUPABASE_URL}
       - SUPABASE_KEY=${SUPABASE_KEY}
     restart: unless-stopped
@@ -40,6 +43,7 @@ services:
     environment:
       - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
       - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      - NEXT_PUBLIC_API_URL=http://localhost:4000
     depends_on:
       - backend
     restart: unless-stopped

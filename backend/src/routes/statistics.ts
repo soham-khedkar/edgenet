@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import type { Router as ExpressRouter } from 'express';
-import { supabase } from '../services/supabaseClient.js';
+import { supabaseAdmin } from '../services/supabaseClient.js';
 import {
   getNetworkOverview,
   getDeviceStatistics,
@@ -34,14 +34,22 @@ function parseRangeToStart(range: string | undefined): string {
 // Legacy: GET /api/statistics/summary -> expected by frontend
 router.get('/summary', async (_req: Request, res: Response) => {
   try {
-    const { data, error } = await supabase.from('network_overview').select('*').single();
+    // Compute summary from actual devices data
+    const { data: devices, error } = await supabaseAdmin
+      .from('devices')
+      .select('rx_bytes_total, tx_bytes_total, last_seen_at');
+
     if (error) throw error;
 
-    const row: any = data || {};
-    const totalDevices = row.total_devices || 0;
-    const totalBandwidthBytes = row.total_bandwidth || ((row.total_rx_bytes || 0) + (row.total_tx_bytes || 0));
+    const allDevices = devices || [];
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+    const activeDevices = allDevices.filter((d: any) => d.last_seen_at >= fiveMinutesAgo);
+
+    const totalDevices = allDevices.length;
+    const totalBandwidthBytes = allDevices.reduce((sum: number, d: any) => 
+      sum + (d.rx_bytes_total || 0) + (d.tx_bytes_total || 0), 0);
     const totalBandwidthUsed = `${(totalBandwidthBytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
-    const averageDevicesOnline = row.online_devices || 0;
+    const averageDevicesOnline = activeDevices.length;
 
     res.json({
       totalDevices,
@@ -58,7 +66,7 @@ router.get('/summary', async (_req: Request, res: Response) => {
 router.get('/bandwidth', async (req: Request, res: Response) => {
   try {
     const start = parseRangeToStart(req.query.range as string | undefined);
-    const { data: telemetry, error } = await supabase
+    const { data: telemetry, error } = await supabaseAdmin
       .from('telemetry_data')
       .select('timestamp, rx_bytes, tx_bytes')
       .gte('timestamp', start)
@@ -95,7 +103,7 @@ router.get('/bandwidth', async (req: Request, res: Response) => {
 router.get('/device-usage', async (req: Request, res: Response) => {
   try {
     const start = parseRangeToStart(req.query.range as string | undefined);
-    const { data: telemetry, error } = await supabase
+    const { data: telemetry, error } = await supabaseAdmin
       .from('telemetry_data')
       .select('device_id, rx_bytes, tx_bytes, devices(hostname, mac_address)')
       .gte('timestamp', start);
@@ -118,14 +126,20 @@ router.get('/device-usage', async (req: Request, res: Response) => {
   }
 });
 
-// Legacy: GET /api/statistics/top-devices -> map to top_bandwidth_consumers view
+// Legacy: GET /api/statistics/top-devices -> compute from devices table
 router.get('/top-devices', async (_req: Request, res: Response) => {
   try {
-    const { data, error } = await supabase.from('top_bandwidth_consumers').select('*').limit(10);
+    const { data, error } = await supabaseAdmin
+      .from('devices')
+      .select('hostname, mac_address, rx_bytes_total, tx_bytes_total')
+      .order('rx_bytes_total', { ascending: false })
+      .limit(10);
+    
     if (error) throw error;
+    
     const mapped = (data || []).map((d: any) => ({ 
       deviceName: d.hostname || d.mac_address, 
-      totalData: (d.total_bytes || 0) / (1024 * 1024 * 1024) 
+      totalData: ((d.rx_bytes_total || 0) + (d.tx_bytes_total || 0)) / (1024 * 1024 * 1024) 
     }));
     res.json({ data: mapped });
   } catch (err) {
@@ -138,7 +152,7 @@ router.get('/top-devices', async (_req: Request, res: Response) => {
 router.get('/hourly-patterns', async (req: Request, res: Response) => {
   try {
     const start = parseRangeToStart(req.query.range as string | undefined);
-    const { data: telemetry, error } = await supabase
+    const { data: telemetry, error } = await supabaseAdmin
       .from('telemetry_data')
       .select('timestamp, rx_bytes, tx_bytes')
       .gte('timestamp', start);

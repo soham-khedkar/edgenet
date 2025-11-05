@@ -12,7 +12,7 @@ import { DeviceGridSkeleton, StatsSkeleton } from '@/components/LoadingSkeleton'
 import { Broadcast, Devices as DevicesIcon } from '@phosphor-icons/react';
 
 export default function Home() {
-  const { devices, loading, error, refetch, connected } = useRealtimeDevices();
+  const { devices, loading, error, refetch, connected, source } = useRealtimeDevices();
   const { isConnected } = useConnectionStatus();
   const [agentHealthy, setAgentHealthy] = useState(true);
   const [configExists, setConfigExists] = useState(false);
@@ -77,6 +77,11 @@ export default function Home() {
           <div className={`neo-card px-5 py-3 ${connected ? 'bg-[#FFD600]' : 'bg-gray-400'}`}>
             <div className="font-pixel text-[9px] mb-1">STATUS</div>
             <div className="font-mono text-base font-bold">{connected ? 'ONLINE' : 'OFFLINE'}</div>
+            {source !== 'none' && (
+              <div className="font-mono text-[8px] text-gray-700 mt-1">
+                {source === 'backend' ? '📡 Cloud Data' : '🏠 Local Agent'}
+              </div>
+            )}
           </div>
         </div>
         
@@ -90,22 +95,17 @@ export default function Home() {
           <div className="flex items-start justify-between gap-4">
             <div>
               <div className="font-pixel text-sm text-red-700 mb-2">
-                {!agentHealthy ? 'SERVICE_UNAVAILABLE' : !configExists ? 'ROUTER_NOT_CONFIGURED' : 'CONNECTION_ERROR'}
+                CONNECTION_ERROR
               </div>
               <p className="font-mono text-sm text-red-600">{error}</p>
               {!agentHealthy && (
                 <p className="font-mono text-xs text-red-500 mt-2">
-                  Network monitoring service is not running. Please contact your administrator.
+                  Local agent is not running. Check if Docker container is up.
                 </p>
               )}
               {agentHealthy && !configExists && (
                 <p className="font-mono text-xs text-red-500 mt-2">
-                  Router credentials not configured. Go to <Link href="/setup" className="underline font-bold">Setup</Link> to configure.
-                </p>
-              )}
-              {agentHealthy && configExists && (
-                <p className="font-mono text-xs text-red-500 mt-2">
-                  Unable to connect to router. Check if router is reachable or reconfigure in <Link href="/setup" className="underline font-bold">Setup</Link>.
+                  Router not configured. Go to <Link href="/setup" className="underline font-bold">Setup</Link> to configure.
                 </p>
               )}
             </div>
