@@ -79,7 +79,7 @@ export default function Home() {
             <div className="font-mono text-base font-bold">{connected ? 'ONLINE' : 'OFFLINE'}</div>
             {source !== 'none' && (
               <div className="font-mono text-[8px] text-gray-700 mt-1">
-                {source === 'backend' ? '📡 Cloud Data' : '🏠 Local Agent'}
+                📡 Supabase
               </div>
             )}
           </div>
