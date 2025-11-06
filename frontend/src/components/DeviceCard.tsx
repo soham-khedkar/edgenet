@@ -89,25 +89,25 @@ export default function DeviceCard({ device }: DeviceCardProps) {
   };
 
   return (
-    <div className="glass-panel p-6 hover:border-blue-500/50 transition-all duration-200 group">
+    <div className="glass-panel p-4 sm:p-6 hover:border-blue-500/50 transition-all duration-200 group">
       
       {/* Header */}
-      <div className="flex items-start justify-between mb-4">
+      <div className="flex items-start justify-between mb-3 sm:mb-4 gap-2">
         <div className="min-w-0 flex-1">
-          <h3 className="font-semibold text-lg text-gray-200 truncate group-hover:text-blue-400 transition-colors">
+          <h3 className="font-semibold text-base sm:text-lg text-gray-200 truncate group-hover:text-blue-400 transition-colors">
             {device.hostname || 'Unknown Device'}
           </h3>
-          <p className="font-mono text-sm text-gray-500 mt-1 truncate">
+          <p className="font-mono text-xs sm:text-sm text-gray-500 mt-1 truncate">
             {device.mac}
           </p>
         </div>
         
         {/* Signal Bars */}
-        <div className="flex items-end gap-1 h-6 ml-3 flex-shrink-0">
+        <div className="flex items-end gap-0.5 sm:gap-1 h-5 sm:h-6 ml-2 sm:ml-3 flex-shrink-0">
           {[1, 2, 3, 4].map((bar) => (
             <div
               key={bar}
-              className={`w-2 rounded-sm transition-colors ${
+              className={`w-1.5 sm:w-2 rounded-sm transition-colors ${
                 bar <= bars ? getSignalColor(signalLevel) : 'bg-gray-700'
               }`}
               style={{ height: `${bar * 22}%` }}
@@ -117,55 +117,55 @@ export default function DeviceCard({ device }: DeviceCardProps) {
       </div>
 
       {/* Info Grid */}
-      <div className="space-y-3 text-base">
+      <div className="space-y-2 sm:space-y-3 text-sm sm:text-base">
         
         {device.ipv4 && (
-          <div className="flex justify-between items-center">
-            <span className="text-gray-500">IP</span>
-            <span className="font-mono text-gray-300">{device.ipv4}</span>
+          <div className="flex justify-between items-center gap-2">
+            <span className="text-gray-500 text-xs sm:text-base">IP</span>
+            <span className="font-mono text-gray-300 text-xs sm:text-base truncate">{device.ipv4}</span>
           </div>
         )}
         
-        <div className="flex justify-between items-center">
-          <span className="text-gray-500">Signal</span>
-          <span className={`font-mono font-semibold ${getSignalColor(signalLevel)}`}>
+        <div className="flex justify-between items-center gap-2">
+          <span className="text-gray-500 text-xs sm:text-base">Signal</span>
+          <span className={`font-mono font-semibold text-xs sm:text-base ${getSignalColor(signalLevel)}`}>
             {signalLevel}%
           </span>
         </div>
         
         {device.band && (
-          <div className="flex justify-between items-center">
-            <span className="text-gray-500">Band</span>
-            <span className="text-gray-300">{device.band}</span>
+          <div className="flex justify-between items-center gap-2">
+            <span className="text-gray-500 text-xs sm:text-base">Band</span>
+            <span className="text-gray-300 text-xs sm:text-base">{device.band}</span>
           </div>
         )}
         
         {device.last_tx_rate && (
-          <div className="flex justify-between items-center">
-            <span className="text-gray-500">TX Rate</span>
-            <span className="text-gray-300 font-mono">{device.last_tx_rate}</span>
+          <div className="flex justify-between items-center gap-2">
+            <span className="text-gray-500 text-xs sm:text-base">TX Rate</span>
+            <span className="text-gray-300 font-mono text-xs sm:text-base truncate">{device.last_tx_rate}</span>
           </div>
         )}
 
         {/* Bandwidth Usage */}
-        <div className="pt-3 mt-3 border-t border-white/10">
-          <div className="flex justify-between items-center">
-            <span className="text-gray-500">↓ RX</span>
-            <span className="text-gray-400 font-mono">{formatBytes(device.rx_bytes)}</span>
+        <div className="pt-2 sm:pt-3 mt-2 sm:mt-3 border-t border-white/10">
+          <div className="flex justify-between items-center gap-2">
+            <span className="text-gray-500 text-xs sm:text-base">↓ RX</span>
+            <span className="text-gray-400 font-mono text-xs sm:text-base">{formatBytes(device.rx_bytes)}</span>
           </div>
-          <div className="flex justify-between items-center mt-2">
-            <span className="text-gray-500">↑ TX</span>
-            <span className="text-gray-400 font-mono">{formatBytes(device.tx_bytes)}</span>
+          <div className="flex justify-between items-center mt-1.5 sm:mt-2 gap-2">
+            <span className="text-gray-500 text-xs sm:text-base">↑ TX</span>
+            <span className="text-gray-400 font-mono text-xs sm:text-base">{formatBytes(device.tx_bytes)}</span>
           </div>
         </div>
       </div>
 
       {/* Action Buttons */}
-      <div className="mt-6 flex gap-2">
+      <div className="mt-4 sm:mt-6 flex gap-2">
         {/* Info Button with Popover */}
         <Popover>
           <PopoverTrigger asChild>
-            <button className="flex-1 px-4 py-2.5 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 rounded-lg text-blue-400 font-medium transition-colors text-base">
+            <button className="flex-1 px-3 sm:px-4 py-2 sm:py-2.5 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 rounded-lg text-blue-400 font-medium transition-colors text-sm sm:text-base">
               ℹ️ Info
             </button>
           </PopoverTrigger>
@@ -217,7 +217,7 @@ export default function DeviceCard({ device }: DeviceCardProps) {
         <AlertDialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <AlertDialogTrigger asChild>
             <button 
-              className="flex-1 px-4 py-2.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 rounded-lg text-red-400 font-medium transition-colors text-base disabled:opacity-50"
+              className="flex-1 px-3 sm:px-4 py-2 sm:py-2.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 rounded-lg text-red-400 font-medium transition-colors text-sm sm:text-base disabled:opacity-50"
               disabled={blockSuccess}
               onClick={() => {
                 console.log('Block button clicked, opening dialog');
@@ -227,19 +227,19 @@ export default function DeviceCard({ device }: DeviceCardProps) {
               {blockSuccess ? '✅ Blocked' : '🚫 Block'}
             </button>
           </AlertDialogTrigger>
-          <AlertDialogContent className="bg-gray-900 border border-gray-700 text-gray-200">
+          <AlertDialogContent className="bg-gray-900 border border-gray-700 text-gray-200 max-w-[90%] sm:max-w-md">
             <AlertDialogHeader>
-              <AlertDialogTitle className="text-xl text-red-400">Block Device?</AlertDialogTitle>
-              <AlertDialogDescription className="text-gray-400 text-base">
-                This will add <span className="font-mono text-white">{device.mac}</span> to the MAC filter list, 
+              <AlertDialogTitle className="text-lg sm:text-xl text-red-400">Block Device?</AlertDialogTitle>
+              <AlertDialogDescription className="text-gray-400 text-sm sm:text-base">
+                This will add <span className="font-mono text-white break-all">{device.mac}</span> to the MAC filter list, 
                 blocking <strong>{device.hostname || 'this device'}</strong> from accessing the network.
                 <br /><br />
                 This action can be reversed from the router's MAC filter settings.
               </AlertDialogDescription>
             </AlertDialogHeader>
-            <AlertDialogFooter>
+            <AlertDialogFooter className="flex-col sm:flex-row gap-2">
               <AlertDialogCancel 
-                className="bg-gray-800 hover:bg-gray-700 text-gray-200 border-gray-600"
+                className="bg-gray-800 hover:bg-gray-700 text-gray-200 border-gray-600 w-full sm:w-auto"
                 onClick={() => setDialogOpen(false)}
               >
                 Cancel
@@ -251,7 +251,7 @@ export default function DeviceCard({ device }: DeviceCardProps) {
                   handleBlockDevice();
                 }}
                 disabled={isBlocking}
-                className="bg-red-600 hover:bg-red-700 text-white"
+                className="bg-red-600 hover:bg-red-700 text-white w-full sm:w-auto"
               >
                 {isBlocking ? 'Blocking...' : 'Yes, Block Device'}
               </AlertDialogAction>
@@ -262,8 +262,8 @@ export default function DeviceCard({ device }: DeviceCardProps) {
 
       {/* Power Saving Badge */}
       {device.power_saving && (
-        <div className="mt-4">
-          <span className="inline-flex items-center px-3 py-1.5 rounded-md text-sm bg-orange-500/10 text-orange-400 border border-orange-500/20">
+        <div className="mt-3 sm:mt-4">
+          <span className="inline-flex items-center px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm bg-orange-500/10 text-orange-400 border border-orange-500/20">
             ⚡ Power Saving
           </span>
         </div>

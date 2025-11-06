@@ -63,20 +63,20 @@ export default function Home() {
   const band5GHz = devices.filter(d => d.band === '5 GHz').length;
 
   return (
-    <main className="min-h-screen bg-[#F5F5F5] px-6 md:px-10 pb-10">
+    <main className="min-h-screen bg-[#F5F5F5] px-4 sm:px-6 md:px-10 pb-10">
       {/* Decorative Background */}
       <div className="absolute top-0 right-0 w-64 h-64 grid-bg opacity-5 pointer-events-none"></div>
       
       {/* Hero Section */}
-      <section className="mb-8">
-        <div className="flex items-start justify-between mb-5 flex-wrap gap-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-pixel mb-2">NETWORK_DASHBOARD</h1>
-            <p className="text-xs font-mono text-gray-600">D-Link DIR-615 • Real-time monitoring</p>
+      <section className="mb-6 sm:mb-8">
+        <div className="flex flex-col sm:flex-row items-start justify-between mb-5 gap-4">
+          <div className="min-w-0 flex-1">
+            <h1 className="text-lg sm:text-2xl md:text-3xl font-pixel mb-2 break-words">NETWORK_DASHBOARD</h1>
+            <p className="text-[10px] sm:text-xs font-mono text-gray-600">D-Link DIR-615 • Real-time monitoring</p>
           </div>
-          <div className={`neo-card px-5 py-3 ${connected ? 'bg-[#FFD600]' : 'bg-gray-400'}`}>
-            <div className="font-pixel text-[9px] mb-1">STATUS</div>
-            <div className="font-mono text-base font-bold">{connected ? 'ONLINE' : 'OFFLINE'}</div>
+          <div className={`neo-card px-4 sm:px-5 py-2.5 sm:py-3 w-full sm:w-auto ${connected ? 'bg-[#FFD600]' : 'bg-gray-400'}`}>
+            <div className="font-pixel text-[8px] sm:text-[9px] mb-1">STATUS</div>
+            <div className="font-mono text-sm sm:text-base font-bold">{connected ? 'ONLINE' : 'OFFLINE'}</div>
             {source !== 'none' && (
               <div className="font-mono text-[8px] text-gray-700 mt-1">
                 📡 Supabase
@@ -120,7 +120,7 @@ export default function Home() {
       )}
 
       {/* Stats Grid */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
         {loading ? (
           <>
             <StatsSkeleton />
@@ -130,43 +130,43 @@ export default function Home() {
         ) : (
           <>
             {/* Total Devices - Yellow */}
-            <div className="neo-card bg-[#FFD600] p-5">
+            <div className="neo-card bg-[#FFD600] p-4 sm:p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="font-pixel text-[9px] mb-2">DEVICES</div>
-                  <div className="text-4xl font-bold">{devices.length}</div>
-                  <div className="text-[10px] font-mono mt-1">TOTAL</div>
+                  <div className="font-pixel text-[8px] sm:text-[9px] mb-2">DEVICES</div>
+                  <div className="text-3xl sm:text-4xl font-bold">{devices.length}</div>
+                  <div className="text-[9px] sm:text-[10px] font-mono mt-1">TOTAL</div>
                 </div>
-                <DevicesIcon size={44} weight="bold" />
+                <DevicesIcon size={36} weight="bold" className="sm:w-11 sm:h-11" />
               </div>
             </div>
 
             {/* Active Devices - Cyan */}
-            <div className="neo-card bg-[#00E5FF] p-5">
+            <div className="neo-card bg-[#00E5FF] p-4 sm:p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="font-pixel text-[9px] mb-2">ONLINE</div>
-                  <div className="text-4xl font-bold">{activeDevices}</div>
-                  <div className="text-[10px] font-mono mt-1">ACTIVE</div>
+                  <div className="font-pixel text-[8px] sm:text-[9px] mb-2">ONLINE</div>
+                  <div className="text-3xl sm:text-4xl font-bold">{activeDevices}</div>
+                  <div className="text-[9px] sm:text-[10px] font-mono mt-1">ACTIVE</div>
                 </div>
-                <div className="w-11 h-11 rounded-full bg-[#CCFF00] neo-border flex items-center justify-center">
-                  <div className="w-5 h-5 rounded-full bg-black animate-pulse-neo"></div>
+                <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-[#CCFF00] neo-border flex items-center justify-center">
+                  <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-black animate-pulse-neo"></div>
                 </div>
               </div>
             </div>
 
             {/* Band Distribution - Pink */}
-            <div className="neo-card bg-[#FF006E] p-5 text-white">
-              <div className="font-pixel text-[9px] mb-2">BANDS</div>
+            <div className="neo-card bg-[#FF006E] p-4 sm:p-5 text-white sm:col-span-2 lg:col-span-1">
+              <div className="font-pixel text-[8px] sm:text-[9px] mb-2">BANDS</div>
               <div className="flex items-center gap-3">
                 <div>
-                  <div className="text-4xl font-bold">{band24GHz}</div>
-                  <div className="text-[10px] font-mono">2.4 GHz</div>
+                  <div className="text-3xl sm:text-4xl font-bold">{band24GHz}</div>
+                  <div className="text-[9px] sm:text-[10px] font-mono">2.4 GHz</div>
                 </div>
-                <div className="text-2xl">+</div>
+                <div className="text-xl sm:text-2xl">+</div>
                 <div>
-                  <div className="text-4xl font-bold">{band5GHz}</div>
-                  <div className="text-[10px] font-mono">5 GHz</div>
+                  <div className="text-3xl sm:text-4xl font-bold">{band5GHz}</div>
+                  <div className="text-[9px] sm:text-[10px] font-mono">5 GHz</div>
                 </div>
               </div>
             </div>
@@ -175,19 +175,19 @@ export default function Home() {
       </section>
 
       {/* Content Grid - Centered Phone Mockup, Devices Below */}
-      <section className="space-y-8 mb-8">
+      <section className="space-y-6 sm:space-y-8 mb-6 sm:mb-8">
         {devices.length === 0 && !loading ? (
-          <div className="neo-card bg-white p-10 text-center">
-            <div className="w-14 h-14 rounded-full bg-[#FFD600] neo-border mx-auto mb-5 flex items-center justify-center">
-              <DevicesIcon size={28} weight="bold" />
+          <div className="neo-card bg-white p-6 sm:p-10 text-center">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[#FFD600] neo-border mx-auto mb-4 sm:mb-5 flex items-center justify-center">
+              <DevicesIcon size={24} weight="bold" className="sm:w-7 sm:h-7" />
             </div>
-            <h2 className="text-xl font-pixel mb-4">NO_DEVICES_FOUND</h2>
-            <p className="text-gray-600 font-mono mb-5 text-xs">
+            <h2 className="text-base sm:text-xl font-pixel mb-3 sm:mb-4">NO_DEVICES_FOUND</h2>
+            <p className="text-gray-600 font-mono mb-4 sm:mb-5 text-[10px] sm:text-xs">
               No router connection configured. Set up your router to start monitoring.
             </p>
             <Link 
               href="/setup"
-              className="neo-button bg-[#FFD600] px-5 py-2.5 font-mono text-xs inline-block no-underline"
+              className="neo-button bg-[#FFD600] px-4 sm:px-5 py-2 sm:py-2.5 font-mono text-[10px] sm:text-xs inline-block no-underline"
             >
               CONFIGURE_ROUTER
             </Link>
@@ -195,12 +195,12 @@ export default function Home() {
         ) : (
           <>
             {/* Phone Mockup with Terminal - Centered */}
-            <div className="flex flex-col items-center">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-3 h-3 bg-black"></div>
-                <h2 className="font-pixel text-sm md:text-base">TERMINAL_VIEW</h2>
+            <div className="flex flex-col items-center overflow-x-hidden">
+              <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+                <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-black"></div>
+                <h2 className="font-pixel text-xs sm:text-sm md:text-base">TERMINAL_VIEW</h2>
               </div>
-              <div className="w-full max-w-[400px]">
+              <div className="w-full max-w-[320px] sm:max-w-[400px]">
                 <PhoneMockup 
                   terminalContent={<TerminalPanel devices={devices} />}
                 />
@@ -208,22 +208,22 @@ export default function Home() {
             </div>
 
             {/* Separator with grid */}
-            <div className="h-8 grid-bg opacity-20"></div>
+            <div className="h-6 sm:h-8 grid-bg opacity-20"></div>
 
             {/* Device Explorer - Full width below mockup */}
-            <div className="w-full">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-3 h-3 bg-black"></div>
-                <h2 className="font-pixel text-sm md:text-base">CONNECTED_DEVICES</h2>
+            <div className="w-full overflow-x-hidden">
+              <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+                <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-black"></div>
+                <h2 className="font-pixel text-xs sm:text-sm md:text-base">CONNECTED_DEVICES</h2>
               </div>
               <DeviceExplorer devices={devices} />
             </div>
 
             {/* Bandwidth Control Section */}
-            <div className="w-full mt-12">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-3 h-3 bg-black"></div>
-                <h2 className="font-pixel text-sm md:text-base">BANDWIDTH_CONTROL</h2>
+            <div className="w-full mt-8 sm:mt-12 overflow-x-hidden">
+              <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+                <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-black"></div>
+                <h2 className="font-pixel text-xs sm:text-sm md:text-base">BANDWIDTH_CONTROL</h2>
               </div>
               <BandwidthControl />
             </div>

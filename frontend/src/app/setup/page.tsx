@@ -160,116 +160,117 @@ export default function SetupPage() {
   const isFormValid = config.routerIp && config.username && config.password;
 
   return (
-    <main className="min-h-screen bg-[#F5F5F5] px-6 md:px-10 pb-10">
+    <main className="min-h-screen bg-[#F5F5F5] px-4 sm:px-6 md:px-10 pb-10">
       {/* Decorative Background */}
       <div className="absolute top-0 right-0 w-64 h-64 grid-bg opacity-5 pointer-events-none"></div>
       
       {/* Header */}
-      <section className="mb-8">
-        <div className="flex items-start justify-between mb-5 flex-wrap gap-4">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-pixel mb-2">ROUTER_SETUP</h1>
-            <p className="text-sm md:text-base font-mono text-gray-600">Configure network monitoring agent</p>
+      <section className="mb-6 sm:mb-8">
+        <div className="flex flex-col sm:flex-row items-start justify-between mb-5 gap-4">
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-3xl md:text-4xl font-pixel mb-2 break-words">ROUTER_SETUP</h1>
+            <p className="text-xs sm:text-sm md:text-base font-mono text-gray-600">Configure network monitoring agent</p>
           </div>
-          <div className="neo-card bg-[#FF006E] text-white px-5 py-4">
-            <Gear size={36} weight="bold" />
+          <div className="neo-card bg-[#FF006E] text-white px-4 sm:px-5 py-3 sm:py-4">
+            <Gear size={28} weight="bold" className="sm:w-9 sm:h-9" />
           </div>
         </div>
         
         {/* Separator */}
-        <div className="h-6 grid-bg opacity-20"></div>
+        <div className="h-4 sm:h-6 grid-bg opacity-20"></div>
       </section>
 
       <div className="max-w-3xl mx-auto relative">
         {/* Dot pattern decoration */}
-        <div className="absolute -right-20 top-20 w-48 h-48 dot-bg opacity-5 pointer-events-none"></div>
+        <div className="absolute -right-20 top-20 w-48 h-48 dot-bg opacity-5 pointer-events-none hidden lg:block"></div>
 
         {/* Setup Form */}
-        <div className="neo-card bg-white p-6 md:p-8 mb-8 relative z-10">
-          <div className="space-y-6">
+        <div className="neo-card bg-white p-4 sm:p-6 md:p-8 mb-6 sm:mb-8 relative z-10">
+          <div className="space-y-4 sm:space-y-6">
             {/* Router IP */}
             <div>
-              <label className="block font-pixel text-xs md:text-sm mb-3">ROUTER_IP_ADDRESS</label>
+              <label className="block font-pixel text-[10px] sm:text-xs md:text-sm mb-2 sm:mb-3">ROUTER_IP_ADDRESS</label>
               <input
                 type="text"
                 value={config.routerIp}
                 onChange={(e) => handleInputChange('routerIp', e.target.value)}
                 placeholder="192.168.0.1"
-                className="w-full neo-border p-4 font-mono text-base focus:outline-none focus:ring-4 focus:ring-[#FFD600] bg-white"
+                className="w-full neo-border p-3 sm:p-4 font-mono text-sm sm:text-base focus:outline-none focus:ring-4 focus:ring-[#FFD600] bg-white"
               />
-              <p className="text-xs md:text-sm font-mono text-gray-600 mt-2">
+              <p className="text-[10px] sm:text-xs md:text-sm font-mono text-gray-600 mt-1.5 sm:mt-2">
                 Usually 192.168.0.1 or 192.168.1.1
               </p>
             </div>
 
             {/* Username */}
             <div>
-              <label className="block font-pixel text-xs md:text-sm mb-3">ADMIN_USERNAME</label>
+              <label className="block font-pixel text-[10px] sm:text-xs md:text-sm mb-2 sm:mb-3">ADMIN_USERNAME</label>
               <input
                 type="text"
                 value={config.username}
                 onChange={(e) => handleInputChange('username', e.target.value)}
                 placeholder="admin"
-                className="w-full neo-border p-4 font-mono text-base focus:outline-none focus:ring-4 focus:ring-[#FFD600] bg-white"
+                className="w-full neo-border p-3 sm:p-4 font-mono text-sm sm:text-base focus:outline-none focus:ring-4 focus:ring-[#FFD600] bg-white"
               />
             </div>
 
             {/* Password */}
             <div>
-              <label className="block font-pixel text-xs md:text-sm mb-3">ADMIN_PASSWORD</label>
+              <label className="block font-pixel text-[10px] sm:text-xs md:text-sm mb-2 sm:mb-3">ADMIN_PASSWORD</label>
               <input
                 type="password"
                 value={config.password}
                 onChange={(e) => handleInputChange('password', e.target.value)}
                 placeholder="••••••••"
-                className="w-full neo-border p-4 font-mono text-base focus:outline-none focus:ring-4 focus:ring-[#FFD600] bg-white"
+                className="w-full neo-border p-3 sm:p-4 font-mono text-sm sm:text-base focus:outline-none focus:ring-4 focus:ring-[#FFD600] bg-white"
               />
             </div>
 
             {/* Polling Interval */}
             <div>
-              <label className="block font-pixel text-xs md:text-sm mb-3">
+              <label className="block font-pixel text-[10px] sm:text-xs md:text-sm mb-2 sm:mb-3">
                 POLLING_INTERVAL: {config.pollingInterval}s
               </label>
-              <div className="flex items-center gap-4">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
                 <input
                   type="range"
                   min="10"
                   max="300"
                   value={config.pollingInterval}
                   onChange={(e) => handleInputChange('pollingInterval', parseInt(e.target.value))}
-                  className="flex-1 h-4 neo-border bg-white cursor-pointer"
+                  className="flex-1 h-3 sm:h-4 neo-border bg-white cursor-pointer"
                 />
-                <div className="neo-card bg-[#FFD600] px-4 py-2 min-w-[80px] text-center font-mono font-bold text-lg">
+                <div className="neo-card bg-[#FFD600] px-3 sm:px-4 py-1.5 sm:py-2 min-w-[70px] sm:min-w-[80px] text-center font-mono font-bold text-base sm:text-lg">
                   {config.pollingInterval}s
                 </div>
               </div>
-              <p className="text-xs md:text-sm font-mono text-gray-600 mt-2">
+              <p className="text-[10px] sm:text-xs md:text-sm font-mono text-gray-600 mt-1.5 sm:mt-2">
                 How often to scan network (10-300 seconds)
               </p>
             </div>
           </div>
         </div>
 
-        <div className="h-6 grid-bg-sm opacity-10 mb-8"></div>
+        <div className="h-4 sm:h-6 grid-bg-sm opacity-10 mb-6 sm:mb-8"></div>
 
         {/* Action Buttons */}
-        <div className="space-y-4 mb-8">
+        <div className="space-y-3 sm:space-y-4 mb-6 sm:mb-8">
           <button
             onClick={testConnection}
             disabled={!isFormValid || testing}
-            className={`w-full neo-button p-5 md:p-6 font-pixel text-sm md:text-base flex items-center justify-center gap-3 ${
+            className={`w-full neo-button p-4 sm:p-5 md:p-6 font-pixel text-xs sm:text-sm md:text-base flex items-center justify-center gap-2 sm:gap-3 ${
               isFormValid && !testing ? 'bg-[#00E5FF] cursor-pointer' : 'bg-gray-300 cursor-not-allowed opacity-60'
             }`}
           >
             {testing ? (
               <>
-                <div className="w-5 h-5 border-4 border-black border-t-transparent rounded-full animate-spin"></div>
-                TESTING_CONNECTION...
+                <div className="w-4 h-4 sm:w-5 sm:h-5 border-3 sm:border-4 border-black border-t-transparent rounded-full animate-spin"></div>
+                <span className="hidden sm:inline">TESTING_CONNECTION...</span>
+                <span className="sm:hidden">TESTING...</span>
               </>
             ) : (
               <>
-                <Gear size={20} weight="bold" />
+                <Gear size={16} weight="bold" className="sm:w-5 sm:h-5" />
                 TEST_CONNECTION
               </>
             )}
@@ -280,18 +281,19 @@ export default function SetupPage() {
               <button
                 onClick={saveConfiguration}
                 disabled={saved}
-                className={`w-full neo-button p-5 md:p-6 font-pixel text-sm md:text-base flex items-center justify-center gap-3 ${
+                className={`w-full neo-button p-4 sm:p-5 md:p-6 font-pixel text-xs sm:text-sm md:text-base flex items-center justify-center gap-2 sm:gap-3 ${
                   !saved ? 'bg-[#CCFF00] cursor-pointer' : 'bg-gray-300 cursor-not-allowed opacity-60'
                 }`}
               >
                 {saved ? (
                   <>
-                    <CheckCircle size={20} weight="bold" />
-                    CONFIGURATION_SAVED
+                    <CheckCircle size={16} weight="bold" className="sm:w-5 sm:h-5" />
+                    <span className="hidden sm:inline">CONFIGURATION_SAVED</span>
+                    <span className="sm:hidden">SAVED</span>
                   </>
                 ) : (
                   <>
-                    <Gear size={20} weight="bold" />
+                    <Gear size={16} weight="bold" className="sm:w-5 sm:h-5" />
                     SAVE_CONFIGURATION
                   </>
                 )}
@@ -303,21 +305,21 @@ export default function SetupPage() {
         {/* Test Result */}
         {testResult && (
           <div
-            className={`neo-card p-6 mb-8 ${
+            className={`neo-card p-4 sm:p-6 mb-6 sm:mb-8 ${
               testResult.success ? 'bg-[#CCFF00]' : 'bg-[#FF006E] text-white'
             }`}
           >
-            <div className="flex items-start gap-4">
+            <div className="flex items-start gap-3 sm:gap-4">
               {testResult.success ? (
-                <CheckCircle size={28} weight="bold" className="flex-shrink-0" />
+                <CheckCircle size={24} weight="bold" className="flex-shrink-0 sm:w-7 sm:h-7" />
               ) : (
-                <XCircle size={28} weight="bold" className="flex-shrink-0" />
+                <XCircle size={24} weight="bold" className="flex-shrink-0 sm:w-7 sm:h-7" />
               )}
-              <div>
-                <div className="font-pixel text-sm md:text-base mb-2">
+              <div className="min-w-0">
+                <div className="font-pixel text-xs sm:text-sm md:text-base mb-1.5 sm:mb-2">
                   {testResult.success ? 'CONNECTION_SUCCESS' : 'CONNECTION_FAILED'}
                 </div>
-                <div className="text-sm md:text-base font-mono">
+                <div className="text-xs sm:text-sm md:text-base font-mono break-words">
                   {testResult.message}
                 </div>
               </div>
@@ -327,27 +329,27 @@ export default function SetupPage() {
 
         {/* Success Instructions */}
         {saved && (
-          <div className="neo-card bg-[#CCFF00] p-6 md:p-8 mb-8">
-            <div className="flex items-start gap-4 mb-6">
-              <CheckCircle size={32} weight="bold" className="flex-shrink-0" />
-              <div>
-                <div className="font-pixel text-sm md:text-base mb-2">CONFIGURATION_SAVED</div>
-                <div className="text-sm md:text-base font-mono">
+          <div className="neo-card bg-[#CCFF00] p-4 sm:p-6 md:p-8 mb-6 sm:mb-8">
+            <div className="flex items-start gap-3 sm:gap-4 mb-4 sm:mb-6">
+              <CheckCircle size={28} weight="bold" className="flex-shrink-0 sm:w-8 sm:h-8" />
+              <div className="min-w-0">
+                <div className="font-pixel text-xs sm:text-sm md:text-base mb-1.5 sm:mb-2">CONFIGURATION_SAVED</div>
+                <div className="text-xs sm:text-sm md:text-base font-mono">
                   Your router is now configured! The monitoring agent will automatically start collecting network data.
                 </div>
               </div>
             </div>
-            <div className="neo-border bg-white p-4 md:p-6">
-              <div className="space-y-3 font-mono text-sm md:text-base">
-                <div className="flex items-center gap-3">
-                  <span className="text-[#00E5FF] text-xl">✓</span>
+            <div className="neo-border bg-white p-3 sm:p-4 md:p-6">
+              <div className="space-y-2 sm:space-y-3 font-mono text-xs sm:text-sm md:text-base">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <span className="text-[#00E5FF] text-lg sm:text-xl flex-shrink-0">✓</span>
                   <span>Configuration automatically saved to agent</span>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-[#00E5FF] text-xl">✓</span>
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <span className="text-[#00E5FF] text-lg sm:text-xl flex-shrink-0">✓</span>
                   <span>Network monitoring service configured</span>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 sm:gap-3">
                   <span className="text-[#00E5FF] text-xl">✓</span>
                   <span>Data collection will begin automatically</span>
                 </div>
